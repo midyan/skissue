@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Avoid overlapping runs on the same ref (e.g. rapid pushes to main).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      # Skip full verify on main when the commit is an automated version bump ([skip ci]).
+      # Pull requests always run the full suite. Checkout still runs so the workflow succeeds.
+      - name: Install and verify
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]'))
+        run: |
+          npm ci
+          npm run verify
+
+      - name: Skip verify ([skip ci])
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]')
+        run: echo "Skipping npm run verify for [skip ci] commit."

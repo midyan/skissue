@@ -1,0 +1,100 @@
+name: Version and release
+
+# After CI succeeds on a push to main, bump patch version, commit to main, then tag + GitHub Release
+# and publish to npm. Tag pushes created with the default GITHUB_TOKEN do not trigger other workflows
+# (see GitHub docs: "Events triggered by the GITHUB_TOKEN"), so publish.yml would never run for these
+# releases — npm publish runs here after gh release create. publish.yml remains for tag pushes from
+# non-Actions sources and workflow_dispatch retries.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+concurrency:
+  group: version-release-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  bump-and-release:
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Skip if bump commit ([skip ci])
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          # gh api --jq takes a single expression; do not use `gh api ... --jq -r .field` (breaks CLI parsing).
+          MSG="$(gh api "repos/${REPO}/commits/${HEAD_SHA}" --jq '.commit.message')"
+          if printf '%s' "$MSG" | grep -Fq '[skip ci]'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skip: triggering commit is a [skip ci] bump (avoids loop)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - name: Bump version, commit, push, create release
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+
+          if [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
+            echo "Skip: main advanced past CI head (${HEAD_SHA:0:7}); another commit landed."
+            exit 0
+          fi
+
+          npm version patch --no-git-tag-version
+          NEW_VER="$(node -p "require('./package.json').version")"
+
+          git add package.json package-lock.json
+          git commit -m "chore(release): bump version to ${NEW_VER} [skip ci]"
+
+          git push origin main
+
+          TAG="v${NEW_VER}"
+          git fetch --tags origin
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists; skipping gh release create."
+            exit 0
+          fi
+
+          gh release create "$TAG" --generate-notes --title "$TAG" --target "$(git rev-parse HEAD)"
+
+          npm ci
+          npm run build
+          npm whoami --registry=https://registry.npmjs.org
+          npm publish --access public

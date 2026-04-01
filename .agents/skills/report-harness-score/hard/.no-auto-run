@@ -1,0 +1,1 @@
+Report-only; run explicitly via check:harness-score (not the batch runner).

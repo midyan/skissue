@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+npx tsx .agents/skills/validate-commit-msg/hard/index.ts "$1"

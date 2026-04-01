@@ -1,0 +1,1 @@
+Report-only; run via npm run check:harness-score (not the batch runner).

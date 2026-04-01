@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "skills": {
+    "commit-workflow": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/commit-workflow",
+      "ref": "refs/heads/main"
+    },
+    "create-pull-request-workflow": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/create-pull-request-workflow",
+      "ref": "refs/heads/main"
+    },
+    "hard-skills": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/hard-skills",
+      "ref": "refs/heads/main"
+    },
+    "implement-ai-harness": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/implement-ai-harness",
+      "ref": "refs/heads/main"
+    },
+    "organize-and-commit-changes": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/organize-and-commit-changes",
+      "ref": "refs/heads/main"
+    },
+    "repo-verify": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/repo-verify",
+      "ref": "refs/heads/main"
+    },
+    "report-harness-score": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/report-harness-score",
+      "ref": "refs/heads/main"
+    },
+    "skill-issue": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/skill-issue",
+      "ref": "refs/heads/main"
+    },
+    "validate-agents-entry": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-agents-entry",
+      "ref": "refs/heads/main"
+    },
+    "validate-commit-msg": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-commit-msg",
+      "ref": "refs/heads/main"
+    },
+    "validate-deps": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-deps",
+      "ref": "refs/heads/main"
+    },
+    "validate-harness-doc": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-harness-doc",
+      "ref": "refs/heads/main"
+    },
+    "validate-indexes": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-indexes",
+      "ref": "refs/heads/main"
+    },
+    "validate-links": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-links",
+      "ref": "refs/heads/main"
+    },
+    "validate-logging": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-logging",
+      "ref": "refs/heads/main"
+    },
+    "validate-naming": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-naming",
+      "ref": "refs/heads/main"
+    },
+    "validate-pr-title": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-pr-title",
+      "ref": "refs/heads/main"
+    },
+    "validate-registry": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-registry",
+      "ref": "refs/heads/main"
+    },
+    "validate-shell-exec": {
+      "registryCommit": "b1d243d59d6d2c70ffea5d3711a637c33916705f",
+      "skillPath": "registry/validate-shell-exec",
+      "ref": "refs/heads/main"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+name: Publish to npm
+
+# Publishes the package at the given tag to https://registry.npmjs.org using the
+# repository secret NPM_TOKEN (granular access token with publish permission).
+# Automated releases from version-and-release.yml publish there in the same job
+# (GITHUB_TOKEN tag pushes do not trigger this workflow); this file covers human
+# tag pushes and workflow_dispatch retries.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing git tag to publish (e.g. v0.1.0). Use if re-running a failed publish."
+        required: true
+        type: string
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # npm + actions/setup-node expect NODE_AUTH_TOKEN; bind it once from repo secrets.
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # workflow_dispatch: github.ref points at the default branch, not the tag — use the input.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # prepublishOnly runs build; explicit step documents the contract in CI logs.
+      - name: Build
+        run: npm run build
+
+      # Confirms NPM_TOKEN is set and valid before publish (fails fast with a clear error).
+      - name: Verify npm authentication
+        run: npm whoami --registry=https://registry.npmjs.org
+
+      - name: Publish to npm
+        run: npm publish --access public

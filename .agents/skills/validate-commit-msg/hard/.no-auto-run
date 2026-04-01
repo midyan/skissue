@@ -1,0 +1,1 @@
+Reads git state / commit message context; not suitable for the generic batch runner.

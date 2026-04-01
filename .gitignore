@@ -1,0 +1,10 @@
+node_modules/
+# Local npm auth (tokens); prefer ~/.npmrc or CI secrets
+.npmrc
+dist/
+*.log
+.DS_Store
+coverage/
+
+# npm pack / local tarball artifacts
+*.tgz

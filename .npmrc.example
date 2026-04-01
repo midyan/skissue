@@ -1,0 +1,3 @@
+# No special config needed for the public npm registry.
+# If you use a private registry for other packages, add scope config here.
+# See https://docs.npmjs.com/cli/v10/configuring-npm/npmrc

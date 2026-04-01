@@ -1,0 +1,5 @@
+registry:
+  owner: midyan
+  repo: skill-registry
+  branch: main
+skillsRoot: .agents/skills

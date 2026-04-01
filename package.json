@@ -1,0 +1,75 @@
+{
+  "name": "skissue",
+  "version": "0.1.21",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/midyan/skissue.git"
+  },
+  "description": "CLI to install and sync agent skills from a Git registry",
+  "keywords": [
+    "cli",
+    "agent",
+    "skills",
+    "registry",
+    "ai"
+  ],
+  "type": "module",
+  "exports": {},
+  "bin": {
+    "skissue": "dist/entry.js"
+  },
+  "files": [
+    "dist",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/entry.js', 0o755)\" && node scripts/ensure-local-bin.mjs",
+    "postinstall": "node scripts/ensure-local-bin.mjs",
+    "dev": "node --import tsx src/entry.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "test:watch": "vitest",
+    "check:agents-entry": "tsx harness/validate-agents-entry/hard/index.ts",
+    "check:harness-doc": "tsx harness/validate-harness-doc/hard/index.ts",
+    "check:indexes": "tsx harness/validate-indexes/hard/index.ts",
+    "check:registry": "tsx harness/validate-registry/hard/index.ts",
+    "check:all": "tsx harness/runner.ts",
+    "check:harness-score": "tsx harness/report-harness-score/hard/index.ts",
+    "verify": "tsc --noEmit && npm run lint && npm run format:check && npm test && npm run check:all && npm run check:harness-score && npm run build",
+    "repo-verify": "tsx harness/repo-verify/hard/index.ts",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky || node -e \"process.exit(0)\""
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^3.0.4"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "chalk": "^5.4.1",
+    "commander": "^13.0.0",
+    "ora": "^8.1.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1"
+  }
+}
