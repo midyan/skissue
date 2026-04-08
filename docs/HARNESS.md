@@ -72,7 +72,7 @@ Each check runs via `harness/runner.ts` unless the skill has `hard/.no-auto-run`
 
 ## Tests and CI
 
-**One-shot local verification:** **`npm run verify`** runs, in order: `tsc --noEmit`, `npm run lint`, `npm run format:check`, `npm test`, **`npm run check:all`**, **`npm run check:harness-score`**, and **`npm run build`**. The **`repo-verify`** harness skill discovers every `harness/*/hard/` skill (and which are in **`check:all`**), then runs **`npm run verify`** when present, or the same steps as a fallback — use **`npm run repo-verify`** for that orchestration (see [harness/repo-verify/SKILL.md](../harness/repo-verify/SKILL.md)).
+**One-shot local verification:** **`npm run verify`** runs, in order: `tsc --noEmit`, `npm run lint`, `npm run format:check`, **`npm run test:coverage`** (Vitest with 100% line/branch/function thresholds), **`npm run check:all`**, **`npm run check:harness-score`**, and **`npm run build`**. The **`repo-verify`** harness skill discovers every `harness/*/hard/` skill (and which are in **`check:all`**), then runs **`npm run verify`** when present, or the same steps as a fallback — use **`npm run repo-verify`** for that orchestration (see [harness/repo-verify/SKILL.md](../harness/repo-verify/SKILL.md)).
 
 | Command                  | Purpose                                                           |
 | ------------------------ | ----------------------------------------------------------------- |

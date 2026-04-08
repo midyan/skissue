@@ -324,7 +324,7 @@ npm run check:all
 
 This repo uses a three-workflow CI/CD pipeline:
 
-1. **PR & push** — [`ci.yml`](.github/workflows/ci.yml) runs `npm run verify` (TypeScript, ESLint, Prettier, tests, harness, harness score, build)
+1. **PR & push** — [`ci.yml`](.github/workflows/ci.yml) runs `npm run verify` (TypeScript, ESLint, Prettier, tests with coverage thresholds, harness, harness score, build)
 2. **Green main** — [`version-and-release.yml`](.github/workflows/version-and-release.yml) bumps the patch version, tags, and creates a GitHub Release
 3. **Tag push** — [`publish.yml`](.github/workflows/publish.yml) runs `npm publish --access public`
 
@@ -371,17 +371,17 @@ skillsRoot: .agents/skills
 git clone https://github.com/midyan/skissue.git
 cd skissue
 npm install          # also enables Husky git hooks via prepare
-npm run verify       # typecheck + lint + format + test + harness + harness score + build
+npm run verify       # typecheck + lint + format + test:coverage + harness + harness score + build
 ```
 
-| Script                  | What it does                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev -- <args>` | Run CLI from source via tsx                                                   |
-| `npm run verify`        | Full pipeline: tsc, eslint, prettier, vitest, check:all, harness score, build |
-| `npm run build`         | Production build via esbuild                                                  |
-| `npm test`              | Run vitest                                                                    |
-| `npm run check:all`     | Harness runner (hard skill checks)                                            |
-| `npm run repo-verify`   | Same as verify, with explicit skill discovery output                          |
+| Script                  | What it does                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `npm run dev -- <args>` | Run CLI from source via tsx                                                            |
+| `npm run verify`        | Full pipeline: tsc, eslint, prettier, vitest+coverage, check:all, harness score, build |
+| `npm run build`         | Production build via esbuild                                                           |
+| `npm test`              | Run vitest                                                                             |
+| `npm run check:all`     | Harness runner (hard skill checks)                                                     |
+| `npm run repo-verify`   | Same as verify, with explicit skill discovery output                                   |
 
 ### Project structure
 

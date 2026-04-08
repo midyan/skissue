@@ -29,5 +29,5 @@ Each skill in **skill-registry** couples **soft** (root `SKILL.md`) and optional
 ## Engineering expectations
 
 1. Follow [docs/index-format.md](docs/index-format.md) and [.agents/rules/index-maintenance.md](.agents/rules/index-maintenance.md) when adding or moving files.
-2. Before committing, run **`npm run verify`** (TypeScript, ESLint, Prettier, tests, harness `check:all`, harness score report, build). Use **`npm run repo-verify`** to list which hard skills participate in `check:all` and run the same pipeline with explicit output. Use **`npm run check:all`** only when you need the harness runner alone.
+2. Before committing, run **`npm run verify`** (TypeScript, ESLint, Prettier, tests with 100% coverage thresholds, harness `check:all`, harness score report, build). Use **`npm run repo-verify`** to list which hard skills participate in `check:all` and run the same pipeline with explicit output. Use **`npm run check:all`** only when you need the harness runner alone.
 3. Node **24+** (see `.nvmrc`).
