@@ -542,6 +542,38 @@ skillsRoot: .agents/skills
     }
   });
 
+  it("uses '.' in bootstrap prompt when existing registry path is whitespace-only", async () => {
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+    const clack = mockClack({
+      select: vi.fn().mockResolvedValueOnce("local").mockResolvedValueOnce("existing"),
+      text: vi
+        .fn()
+        .mockResolvedValueOnce("   ")
+        .mockResolvedValueOnce("main")
+        .mockResolvedValueOnce(".agents/skills"),
+      confirm: vi.fn().mockResolvedValueOnce(false),
+    });
+    vi.doMock("@clack/prompts", () => clack);
+    vi.doMock("../git/exec.js", () => ({
+      execGit: vi.fn().mockResolvedValue({ code: 0, stdout: "main\n", stderr: "" }),
+    }));
+
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-init-"));
+    try {
+      await writeFile(join(cwd, "registry.json"), "{}\n", "utf8");
+      await mkdir(join(cwd, ".git"), { recursive: true });
+      const { runInit } = await import("./init.js");
+      await runInit(cwd);
+      const firstBootstrapMsg = String(clack.confirm.mock.calls[0][0].message);
+      expect(firstBootstrapMsg).toContain("No registry/ directory");
+      // pathLabel is "." when the path is whitespace-only; template adds "." after cyan(pathLabel) → "at .."
+      expect(firstBootstrapMsg).toContain("at ..");
+    } finally {
+      exitSpy.mockRestore();
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
   it("offers bootstrap when existing path has no registry/ directory", async () => {
     const clack = mockClack({
       select: vi.fn().mockResolvedValueOnce("local").mockResolvedValueOnce("existing"),
@@ -616,6 +648,68 @@ skillsRoot: .agents/skills
       expect(clack.cancel).toHaveBeenCalled();
     } finally {
       exitSpy.mockRestore();
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("aborts when bootstrap prompt for existing path without registry/ is cancelled", async () => {
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+    const clack = mockClack({
+      select: vi.fn().mockResolvedValueOnce("local").mockResolvedValueOnce("existing"),
+      text: vi.fn().mockResolvedValueOnce("."),
+      confirm: vi.fn().mockResolvedValueOnce(CANCEL),
+    });
+    vi.doMock("@clack/prompts", () => clack);
+    vi.doMock("../git/exec.js", () => ({
+      execGit: vi.fn().mockResolvedValue({ code: 0, stdout: "main\n", stderr: "" }),
+    }));
+
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-init-"));
+    try {
+      await writeFile(join(cwd, "registry.json"), "{}\n", "utf8");
+      await mkdir(join(cwd, ".git"), { recursive: true });
+      const { runInit } = await import("./init.js");
+      await runInit(cwd);
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      expect(clack.cancel).toHaveBeenCalled();
+    } finally {
+      exitSpy.mockRestore();
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("sets exitCode 1 when scaffold fails during existing-path bootstrap", async () => {
+    const clack = mockClack({
+      select: vi.fn().mockResolvedValueOnce("local").mockResolvedValueOnce("existing"),
+      text: vi.fn().mockResolvedValueOnce("."),
+      confirm: vi.fn().mockResolvedValueOnce(true),
+    });
+    vi.doMock("@clack/prompts", () => clack);
+    vi.doMock("../git/exec.js", () => ({
+      execGit: vi.fn().mockResolvedValue({ code: 0, stdout: "main\n", stderr: "" }),
+    }));
+    vi.doMock("./init-registry.js", async (importOriginal) => {
+      const orig = await importOriginal<typeof import("./init-registry.js")>();
+      return {
+        ...orig,
+        promptMinimalRegistryScaffold: vi.fn().mockResolvedValue({
+          skillId: "fail-skill",
+          runGitInit: false,
+          hadGit: true,
+        }),
+        scaffoldMinimalRegistry: vi.fn().mockRejectedValue(new Error("scaffold failed")),
+      };
+    });
+
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-init-"));
+    try {
+      await writeFile(join(cwd, "registry.json"), "{}\n", "utf8");
+      await mkdir(join(cwd, ".git"), { recursive: true });
+      const { runInit } = await import("./init.js");
+      await runInit(cwd);
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = 0;
       await rm(cwd, { recursive: true, force: true });
     }
   });

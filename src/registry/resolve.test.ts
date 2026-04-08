@@ -47,4 +47,32 @@ describe("resolveSkillPath", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("uses convention when registry.json has no skills map", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "skill-issue-"));
+    try {
+      await writeFile(join(dir, "registry.json"), "{}\n", "utf8");
+      const r = await resolveSkillPath(dir, "orphan");
+      expect(r.source).toBe("convention");
+      expect(r.skillPath).toBe("registry/orphan");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("uses convention when registry.json fails schema (invalid skills shape)", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "skill-issue-"));
+    try {
+      await writeFile(
+        join(dir, "registry.json"),
+        JSON.stringify({ skills: "not-a-record" }),
+        "utf8",
+      );
+      const r = await resolveSkillPath(dir, "bad");
+      expect(r.source).toBe("convention");
+      expect(r.skillPath).toBe("registry/bad");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

@@ -50,4 +50,9 @@ describe("registryLayoutExists", () => {
     const { registryLayoutExists } = await import("./init-registry.js");
     expect(registryLayoutExists(fsStub.root)).toBe(false);
   });
+
+  it("registryDirectoryExists returns false when statSync throws", async () => {
+    const { registryDirectoryExists } = await import("./init-registry.js");
+    expect(registryDirectoryExists(fsStub.root)).toBe(false);
+  });
 });
