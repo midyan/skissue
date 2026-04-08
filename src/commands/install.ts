@@ -5,12 +5,18 @@ import type { Config } from "../config.js";
 import { isLocalRegistry, loadConfig } from "../config.js";
 import { readLockOrEmpty, writeLock, upsertSkillLock } from "../lockfile.js";
 import { skillInstallPath } from "../paths.js";
+import { listRegistrySkillIds } from "../registry/catalog.js";
 import { resolveSkillPath } from "../registry/resolve.js";
 import { ensureRegistryCheckout } from "../git/registry-repo.js";
 import { assertSkillMdPresent, copySkillTree } from "../io.js";
+import { uninstallSkillQuiet } from "./uninstall.js";
 
 /** Result of `ensureRegistryCheckout` — pass into `runInstallMany` to skip a second sync. */
 export type RegistryCheckout = { path: string; head: string };
+
+type InstallFromCheckoutResult =
+  | { outcome: "installed"; dest: string }
+  | { outcome: "removed"; skillId: string };
 
 async function installSkillFromCheckout(
   cwd: string,
@@ -18,7 +24,17 @@ async function installSkillFromCheckout(
   repoPath: string,
   head: string,
   skillId: string,
-): Promise<string> {
+  catalogIds: Set<string>,
+): Promise<InstallFromCheckoutResult> {
+  if (!catalogIds.has(skillId)) {
+    const lock = await readLockOrEmpty(cwd);
+    if (lock.skills[skillId]) {
+      await uninstallSkillQuiet(cwd, skillId);
+      return { outcome: "removed", skillId };
+    }
+    throw new Error(`Skill "${skillId}" is not in the registry.`);
+  }
+
   const { skillPath } = await resolveSkillPath(repoPath, skillId);
   const src = join(repoPath, skillPath);
   await assertSkillMdPresent(src);
@@ -34,7 +50,7 @@ async function installSkillFromCheckout(
     ref,
   });
   await writeLock(cwd, next);
-  return dest;
+  return { outcome: "installed", dest };
 }
 
 export async function runInstall(cwd: string, skillId: string): Promise<void> {
@@ -42,8 +58,17 @@ export async function runInstall(cwd: string, skillId: string): Promise<void> {
   const spin = ora(`Resolving registry and installing ${skillId}`).start();
   try {
     const { path: repoPath, head } = await ensureRegistryCheckout(cwd, config);
-    const dest = await installSkillFromCheckout(cwd, config, repoPath, head, skillId);
-    spin.succeed(chalk.green(`Installed ${skillId} → ${dest}`));
+    const catalogIds = new Set(await listRegistrySkillIds(repoPath));
+    const result = await installSkillFromCheckout(cwd, config, repoPath, head, skillId, catalogIds);
+    if (result.outcome === "removed") {
+      spin.succeed(
+        chalk.yellow(
+          `Removed ${skillId} — no longer in the registry (was still installed locally).`,
+        ),
+      );
+    } else {
+      spin.succeed(chalk.green(`Installed ${skillId} → ${result.dest}`));
+    }
   } catch (err) {
     spin.fail(chalk.red(err instanceof Error ? err.message : String(err)));
     throw err;
@@ -78,11 +103,28 @@ export async function runInstallMany(
     }
   }
 
+  const catalogIds = new Set(await listRegistrySkillIds(repoPath));
+
   for (const skillId of skillIds) {
     const spin = ora(`Installing ${skillId}…`).start();
     try {
-      const dest = await installSkillFromCheckout(cwd, config, repoPath, head, skillId);
-      spin.succeed(chalk.green(`Installed ${skillId} → ${dest}`));
+      const result = await installSkillFromCheckout(
+        cwd,
+        config,
+        repoPath,
+        head,
+        skillId,
+        catalogIds,
+      );
+      if (result.outcome === "removed") {
+        spin.succeed(
+          chalk.yellow(
+            `Removed ${skillId} — no longer in the registry (was still installed locally).`,
+          ),
+        );
+      } else {
+        spin.succeed(chalk.green(`Installed ${skillId} → ${result.dest}`));
+      }
     } catch (err) {
       spin.fail(chalk.red(err instanceof Error ? err.message : String(err)));
       throw err;

@@ -9,6 +9,9 @@ const hoisted = vi.hoisted(() => ({
   upsertSkillLock: vi.fn((_lock: unknown, id: string, entry: unknown) => ({
     skills: { [id]: entry },
   })),
+  listRegistrySkillIds: vi.fn(),
+  uninstallSkillQuiet: vi.fn(),
+  readLockOrEmpty: vi.fn().mockResolvedValue({ version: 1 as const, skills: {} }),
 }));
 
 vi.mock("../git/registry-repo.js", async (importOriginal) => {
@@ -21,13 +24,21 @@ vi.mock("../registry/resolve.js", () => ({
     hoisted.resolveSkillPath(registryRepoRoot, skillId),
 }));
 
+vi.mock("../registry/catalog.js", () => ({
+  listRegistrySkillIds: hoisted.listRegistrySkillIds,
+}));
+
+vi.mock("./uninstall.js", () => ({
+  uninstallSkillQuiet: hoisted.uninstallSkillQuiet,
+}));
+
 vi.mock("../io.js", () => ({
   assertSkillMdPresent: vi.fn().mockResolvedValue(undefined),
   copySkillTree: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../lockfile.js", () => ({
-  readLockOrEmpty: vi.fn().mockResolvedValue({ skills: {} }),
+  readLockOrEmpty: hoisted.readLockOrEmpty,
   writeLock: vi.fn().mockResolvedValue(undefined),
   upsertSkillLock: hoisted.upsertSkillLock,
 }));
@@ -55,9 +66,15 @@ describe("install", () => {
     hoisted.ensureRegistryCheckout.mockReset();
     hoisted.resolveSkillPath.mockReset();
     hoisted.upsertSkillLock.mockReset();
+    hoisted.listRegistrySkillIds.mockReset();
+    hoisted.uninstallSkillQuiet.mockReset();
+    hoisted.readLockOrEmpty.mockReset();
     hoisted.upsertSkillLock.mockImplementation((_lock: unknown, id: string, entry: unknown) => ({
       skills: { [id]: entry },
     }));
+    hoisted.readLockOrEmpty.mockResolvedValue({ version: 1, skills: {} });
+    hoisted.listRegistrySkillIds.mockResolvedValue(["alpha", "z", "a", "x"]);
+    hoisted.uninstallSkillQuiet.mockResolvedValue(undefined);
     oraChains.length = 0;
     hoisted.ensureRegistryCheckout.mockResolvedValue({
       path: "/reg",
@@ -203,6 +220,67 @@ skillsRoot: .agents/skills
         oraChains.find((c) => c.fail.mock.calls.length > 0)?.fail.mock.calls[0]?.[0] ?? "",
       );
       expect(failMsg).toContain("plain-copy");
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("runInstall removes local install when skill is no longer in the registry", async () => {
+    hoisted.listRegistrySkillIds.mockResolvedValue(["other"]);
+    hoisted.readLockOrEmpty.mockResolvedValue({
+      version: 1,
+      skills: {
+        gone: {
+          registryCommit: "b".repeat(40),
+          skillPath: "registry/gone",
+          ref: "refs/heads/main",
+        },
+      },
+    });
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-ins-"));
+    try {
+      await writeLocalConfig(cwd);
+      const { runInstall } = await import("./install.js");
+      await runInstall(cwd, "gone");
+      expect(hoisted.uninstallSkillQuiet).toHaveBeenCalledWith(cwd, "gone");
+      expect(hoisted.upsertSkillLock).not.toHaveBeenCalled();
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("runInstall throws when skill is not in the registry and not installed locally", async () => {
+    hoisted.listRegistrySkillIds.mockResolvedValue([]);
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-ins-"));
+    try {
+      await writeLocalConfig(cwd);
+      const { runInstall } = await import("./install.js");
+      await expect(runInstall(cwd, "missing")).rejects.toThrow(/not in the registry/);
+      expect(hoisted.uninstallSkillQuiet).not.toHaveBeenCalled();
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("runInstallMany removes local install when skill is no longer in the registry", async () => {
+    hoisted.listRegistrySkillIds.mockResolvedValue([]);
+    hoisted.readLockOrEmpty.mockResolvedValue({
+      version: 1,
+      skills: {
+        orphan: {
+          registryCommit: "c".repeat(40),
+          skillPath: "registry/orphan",
+          ref: "refs/heads/main",
+        },
+      },
+    });
+    const cwd = await mkdtemp(join(tmpdir(), "skissue-ins-"));
+    try {
+      await writeLocalConfig(cwd);
+      const { runInstallMany } = await import("./install.js");
+      await runInstallMany(cwd, ["orphan"]);
+      expect(hoisted.uninstallSkillQuiet).toHaveBeenCalledWith(cwd, "orphan");
+      expect(hoisted.upsertSkillLock).not.toHaveBeenCalled();
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
