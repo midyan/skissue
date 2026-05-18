@@ -25,6 +25,7 @@ Each skill in **skill-registry** couples **soft** (root `SKILL.md`) and optional
 | Install & script helpers            | [scripts/INDEX.md](scripts/INDEX.md)                                                                                                                                                                                                                            |
 | npm scope template (no secrets)     | [.npmrc.example](.npmrc.example)                                                                                                                                                                                                                                |
 | README (human)                      | [README.md](README.md)                                                                                                                                                                                                                                          |
+| About (purpose, problem, evolution) | [ABOUT.md](ABOUT.md)                                                                                                                                                                                                                                            |
 
 ## Engineering expectations
 
